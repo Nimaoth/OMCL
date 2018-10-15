@@ -15,8 +15,7 @@ namespace Test
                 var file = args.Length > 0 ? args[0] : @"D:\Programming\C#\OMCL\examples\generated.omcl";
 
                 var parser = Parser.FromFile(file);
-                var configItem = parser.ParseObject();
-                var config = configItem.AsObject();
+                var config = parser.ParseObject();
 
                 
                 var sb = new StringBuilder();
@@ -37,7 +36,7 @@ namespace Test
             foreach (var path in Directory.EnumerateFiles(testsPath)) {
                 try {
                     var parser = Parser.FromFile(path);
-                    parser.ParseItem();
+                    parser.ParseObject();
                 }
                 catch (Exception e) {
                     Console.Error.WriteLine($"Test failed: {path}: {e.Message}");

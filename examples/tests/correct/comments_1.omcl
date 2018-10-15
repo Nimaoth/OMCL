@@ -6,16 +6,16 @@
     */
 */
 
-{
-    // line comment inside of object
-    /*
-        block comment inside of object
-        /*
-            nested block comment inside of object
-        */
-    */
-    property = "test" // line comment after property
-    property2 /* block comment in the middle */ = /* block comment in the middle */ "test"
+property = "test" // line comment after property
+property2 /* block comment in the middle */ = /* block comment in the middle */ "test"
+property3 = {} // line comment after property
+property4 /* block comment in the middle */ = /* block comment in the middle */ {}
+property5 = [] // line comment after property
+property6 /* block comment in the middle */ = /* block comment in the middle */ []
 
-    property3 /* block comment in the middle */ {}
+property7 /* block comment in the middle */ {}
+property8 /* block comment in the middle */ []
+
+property9 = {
+    
 }

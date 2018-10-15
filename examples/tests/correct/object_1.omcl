@@ -1,11 +1,9 @@
-{
-    uiae = {}
-    nrtd = {}
-    uiae_nrtd = {}
-    uiae-nrtd_xvlc = {}
+uiae = {}
+nrtd = {}
+uiae_nrtd = {}
+uiae-nrtd_xvlc = {}
 
-    uiae2 {}
-    nrtd2 {}
-    uiae_nrtd2 {}
-    uiae-nrtd_xvlc2 {}
-}
+uiae2 {}
+nrtd2 {}
+uiae_nrtd2 {}
+uiae-nrtd_xvlc2 {}
