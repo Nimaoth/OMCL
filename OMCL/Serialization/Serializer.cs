@@ -129,6 +129,10 @@ public class Serializer {
     private void WriteValue(OMCLItem item) {
         var prev = _indentationLevel++;
         try {
+            foreach (var t in item.Tags) {
+                _writer.Write($"!{t} ");
+            }
+
             switch (item.Type) {
             case OMCLItem.OMCLItemType.Object:
                 Write(item.AsObject());
@@ -166,7 +170,7 @@ public class Serializer {
                 (c >= 'A' && c <= 'Z') ||
                 (c >= '0' && c <= '9') ||
                 (c == '_') ||
-                (c == '.'))
+                (c == '-'))
             {
                 continue;
             }

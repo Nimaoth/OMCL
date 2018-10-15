@@ -18,6 +18,7 @@ public class OMCLItem {
     public OMCLItemType Type { get; private set; }
 
     private object _value;
+    public List<string> Tags { get; set; } = new List<string>();
 
     public OMCLItem() {
     }

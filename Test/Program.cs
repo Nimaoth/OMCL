@@ -10,10 +10,11 @@ namespace Test
         static void Main(string[] args)
         {
             try {
-                var file = args[0];
+                var file = args.Length > 0 ? args[0] : @"D:\Programming\C#\OMCL\examples\generated.omcl";
 
                 var parser = Parser.FromFile(file);
-                var config = parser.ParseObject();
+                var configItem = parser.ParseObject();
+                var config = configItem.AsObject();
 
                 
                 var sb = new StringBuilder();

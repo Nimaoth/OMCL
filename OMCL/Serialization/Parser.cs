@@ -39,8 +39,26 @@ public class Parser {
         throw new OMCLParserError(NextLocation, $"({NextLocation}) {message}");
     }
 
-    public OMCLObject ParseObject() {
-        OMCLObject result = new OMCLObject();
+    private List<string> ParseTags() {
+        var tags = new List<string>();
+        
+        var next = PeekToken();
+        while (next.Type == TokenType.Tag) {
+            tags.Add(next.value as string);
+            NextToken();
+            next = PeekToken();
+        }
+
+        return tags;
+    }
+
+    public OMCLItem ParseObject() {
+        var tags = ParseTags();
+        return DoParseObject(tags);
+    }
+
+    private OMCLItem DoParseObject(List<string> tags) {
+        OMCLObject resultObject = new OMCLObject();
 
         SkipNewlines();
         if (!Expect(TokenType.OpenBrace)) ReportError("Failed to parse object. Expected '{'");
@@ -48,7 +66,7 @@ public class Parser {
         if (CheckToken(TokenType.ClosingBrace)) {
             NextToken();
             if (!Expect(TokenType.Newline)) ReportError("Failed to parse object. Expected '\\n'");
-            return result;
+            return resultObject;
         }
 
         if (!Expect(TokenType.Newline)) ReportError("Failed to parse object. Expected '\\n'");
@@ -84,24 +102,31 @@ public class Parser {
             }
 
             var item = ParseItem();
-            result.Add(key, item);
+            resultObject.Add(key, item);
         }
 
         if (!Expect(TokenType.ClosingBrace)) ReportError("Failed to parse object. Expected '}}'");
-        if (!Expect(TokenType.Newline)) ReportError("Failed to parse object. Expected '\\n'");
+        if (!Expect(TokenType.Newline, TokenType.EOF)) ReportError("Failed to parse object. Expected '\\n'");
 
+        OMCLItem result = resultObject;
+        result.Tags = tags;
         return result;
     }
 
-    public OMCLArray ParseArray() {
-        OMCLArray result = new OMCLArray();
+    public OMCLItem ParseArray() {
+        var tags = ParseTags();
+        return DoParseArray(tags);
+    }
+
+    private OMCLItem DoParseArray(List<string> tags) {
+        OMCLArray resultArray = new OMCLArray();
 
         if (!Expect(TokenType.OpenBracket)) ReportError("Failed to parse array. Expected '['");
 
         if (CheckToken(TokenType.ClosingBracket)) {
             NextToken();
             if (!Expect(TokenType.Newline)) ReportError("Failed to parse array. Expected '\\n'");
-            return result;
+            return resultArray;
         }
 
         if (!Expect(TokenType.Newline)) ReportError("Failed to parse array. Expected '\\n'");
@@ -119,24 +144,27 @@ public class Parser {
             }
 
             var item = ParseItem();
-            result.Add(item);
+            resultArray.Add(item);
         }
 
         if (!Expect(TokenType.ClosingBracket)) ReportError("Failed to parse array. Expected ']'");
         if (!Expect(TokenType.Newline)) ReportError("Failed to parse array. Expected '\\n'");
 
+        OMCLItem result = resultArray;
+        result.Tags = tags;
         return result;
     }
 
     public OMCLItem ParseItem() {
-        var next = PeekToken();
+        var tags = ParseTags();
 
+        var next = PeekToken();
         switch (next.Type) {
             case TokenType.OpenBrace:
-                return ParseObject();
+                return DoParseObject(tags);
 
             case TokenType.OpenBracket:
-                return ParseArray();
+                return DoParseArray(tags);
 
             case TokenType.String: {
                 NextToken();
@@ -156,7 +184,9 @@ public class Parser {
 
                 if (!Expect(TokenType.Newline)) ReportError("Failed to parse string. Expected '\\n'");
 
-                return sb.ToString();
+                OMCLItem result = sb.ToString();
+                result.Tags = tags;
+                return result;
             }
 
         }
@@ -197,17 +227,19 @@ public class Parser {
     /// <summary>
     /// Consume the next token if it has the specified type, return false if it has not
     /// </summary>
-    private bool Expect(TokenType type)
+    private bool Expect(params TokenType[] types)
     {
         var tok = PeekToken();
 
-        if (tok.Type != type)
-        {
-            return false;
+        foreach (var t in types) {
+            if (tok.Type == t)
+            {
+                NextToken();
+                return true;
+            }
         }
 
-        NextToken();
-        return true;
+        return false;
     }
 
     /// <summary>
@@ -225,4 +257,4 @@ public class Parser {
     }
 }
 
-}
+} // namespace

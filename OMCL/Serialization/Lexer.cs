@@ -24,7 +24,13 @@ internal enum TokenType {
     String,
     Int,
     Float,
-    Bool
+    Bool,
+
+    KwTrue,
+    KwFalse,
+    KwNone,
+
+    Tag
 }
 
 public class Span {
@@ -143,6 +149,10 @@ internal class Lexer {
             case ']': SimpleToken(ref token, TokenType.ClosingBracket); break;
             case ',': SimpleToken(ref token, TokenType.Comma); break;
 
+            case '!':
+                ParseTag(ref token);
+                break;
+
             case '"':
                 ParseStringLiteral(ref token, '"');
                 break;
@@ -168,6 +178,31 @@ internal class Lexer {
 
         token.Location.EndIndex = mLocation.StartIndex;
         return token;
+    }
+
+    private void ParseTag(ref Token token) {
+        token.Type = TokenType.Tag;
+        mLocation.StartIndex++;
+
+        var sb = new StringBuilder();
+
+        while (mLocation.StartIndex < mText.Length) {
+            char c = Current;
+
+            if (IsTagCharacter(c)) {
+                sb.Append(c);
+                mLocation.StartIndex++;
+            }
+            else {
+                break;
+            }
+        }
+
+        token.value = sb.ToString();
+    }
+
+    private bool IsTagCharacter(char c) {
+        return IsAlpha(c) || IsDigit(c) || c == '_' || c == '-';
     }
 
     private void ParseStringLiteral(ref Token token, char end) {
@@ -240,7 +275,7 @@ internal class Lexer {
 
     private bool IsIdent(char c)
     {
-        return IsIdentBegin(c) || (c >= '0' && c <= '9') || c == '.';
+        return IsIdentBegin(c) || (c >= '0' && c <= '9') || c == '-';
     }
 
     private bool SkipWhitespaceAndComments(out Span loc)
