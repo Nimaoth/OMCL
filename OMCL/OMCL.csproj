@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>OMCLConfig</PackageId>
-    <Version>0.0.1</Version>
+    <Version>0.0.3</Version>
     <Authors>Nicolas Otremba</Authors>
     <Company></Company>
     <Title>A simple configuration language</Title>
