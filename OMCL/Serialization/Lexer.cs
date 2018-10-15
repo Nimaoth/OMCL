@@ -1,5 +1,7 @@
 
 
+using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -69,7 +71,7 @@ internal class Lexer {
 
     private Span mLocation;
 
-    private char Current => mText[mLocation.StartIndex];
+    private char Current => mLocation.StartIndex < mText.Length ? mText[mLocation.StartIndex] : '\0';
     private char Next => mLocation.StartIndex < mText.Length - 1 ? mText[mLocation.StartIndex + 1] : (char)0;
     private char Prev => mLocation.StartIndex > 0 ? mText[mLocation.StartIndex - 1] : (char)0;
 
@@ -170,11 +172,9 @@ internal class Lexer {
                 break;
             }
 
-            // case '"': ParseStringLiteral(ref token, '"'); break;
-
-            // case char cc when IsDigit(cc):
-            //     ParseNumberLiteral(ref token);
-            //     break;
+            case char cc when IsDigit(cc):
+                ParseNumberLiteral(ref token);
+                break;
 
             default:
                 token.Type = TokenType.Unknown;
@@ -213,10 +213,6 @@ internal class Lexer {
         }
 
         token.value = sb.ToString();
-    }
-
-    private bool IsTagCharacter(char c) {
-        return IsAlpha(c) || IsDigit(c) || c == '_' || c == '-';
     }
 
     private void ParseStringLiteral(ref Token token, char end) {
@@ -267,9 +263,202 @@ internal class Lexer {
         mLocation.StartIndex += len;
     }
 
+    private void ParseNumberLiteral(ref Token token) {
+        token.Type = TokenType.Int;
+
+        var sb = new StringBuilder();
+
+        Func<char, bool> isDigit = IsDigit;
+
+        int b = 10;
+        bool canBeFloat = true;
+        bool isFloat = false;
+
+        if (Current == '0') {
+            switch (Next) {
+            case 'b':
+                b = 2;
+                isDigit = CreateIsDigit(2);
+                mLocation.StartIndex += 2;
+                canBeFloat = false;
+                break;
+                
+            case 'o':
+                b = 8;
+                isDigit = CreateIsDigit(8);
+                mLocation.StartIndex += 2;
+                canBeFloat = false;
+                break;
+
+            case 'x':
+                b = 16;
+                isDigit = CreateIsDigit(16);
+                mLocation.StartIndex += 2;
+                canBeFloat = false;
+                break;
+            }
+        }
+
+
+        var state = ParseNumberState.Start;
+        while (state != ParseNumberState.End) {
+            var c = Current;
+
+            switch (state) {
+            case ParseNumberState.Start:
+                if (isDigit(c)) {
+                    sb.Append(c);
+                    state = ParseNumberState.IntDigit;
+                }
+                else state = ParseNumberState.End;
+                break;
+
+            case ParseNumberState.IntDigit:
+                if (isDigit(c)) sb.Append(c); // unchanged
+                else if (c == '_') state = ParseNumberState.IntDigitUnderscore;
+                else if (c == '.') {
+                    sb.Append(c);
+                    state = ParseNumberState.Period;
+                    isFloat = true;
+                }
+                else state = ParseNumberState.End;
+                break;
+
+            case ParseNumberState.IntDigitUnderscore:
+                if (isDigit(c)) {
+                    sb.Append(c);
+                    state = ParseNumberState.IntDigit;
+                }
+                else if (c == '_') ; // unchanged
+                else ReportError($"Invalid character in number literal: {c}");
+                break;
+
+            case ParseNumberState.Period:
+                if (IsDigit(c)) {
+                    sb.Append(c);
+                    state = ParseNumberState.FloatDigit;
+                }
+                else ReportError($"Invalid character in number literal: {c}");
+                break;
+
+            case ParseNumberState.FloatDigit:
+                if (IsDigit(c)) sb.Append(c); // unchanged
+                else if (c == '_') state = ParseNumberState.FloatDigitUnderscore;
+                else if (c == 'e') {
+                    sb.Append(c);
+                    state = ParseNumberState.Exponent;
+                }
+                else state = ParseNumberState.End;
+                break;
+
+            case ParseNumberState.FloatDigitUnderscore:
+                if (IsDigit(c)) {
+                    sb.Append(c);
+                    state = ParseNumberState.FloatDigit;
+                }
+                else if (c == '_') ; // unchanged
+                else ReportError($"Invalid character in number literal: {c}");
+                break;
+
+            case ParseNumberState.Exponent:
+                if (IsDigit(c)) {
+                    sb.Append(c);
+                    state = ParseNumberState.ExponentDigit;
+                }
+                else if (c == '+') {
+                    sb.Append(c);
+                    state = ParseNumberState.ExponentPlus;
+                }
+                else if (c == '-') {
+                    sb.Append(c);
+                    state = ParseNumberState.ExponentMinus;
+                }
+                else ReportError($"Invalid character in number literal: {c}");
+                break;
+
+            case ParseNumberState.ExponentPlus:
+                if (IsDigit(c)) {
+                    sb.Append(c);
+                    state = ParseNumberState.ExponentDigit;
+                }
+                else ReportError($"Invalid character in number literal: {c}");
+                break;
+
+            case ParseNumberState.ExponentMinus:
+                if (IsDigit(c)) {
+                    sb.Append(c);
+                    state = ParseNumberState.ExponentDigit;
+                }
+                else ReportError($"Invalid character in number literal: {c}");
+                break;
+
+            case ParseNumberState.ExponentDigit:
+                if (IsDigit(c)) {
+                    sb.Append(c);
+                }
+                else state = ParseNumberState.End;
+                break;
+            }
+
+            if (state != ParseNumberState.End)
+                mLocation.StartIndex++;
+        }
+
+        if (isFloat && !canBeFloat)
+            ReportError($"Invalid number literal. Can't be a float!");
+        
+        if (isFloat) {
+            if (double.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double value)) {
+                token.Type = TokenType.Float;
+                token.value = value;
+            }
+            else {
+                ReportError($"Invalid float literal: '{sb}'");
+            }
+        }
+        else {
+            try {
+                token.Type = TokenType.Int;
+                token.value = Convert.ToInt64(sb.ToString(), b);
+            }
+            catch (Exception e) {
+                ReportError($"Invalid int literal: '{sb}': {e.Message}");
+            }
+        }
+    }
+
+    private void ReportError(string message) {
+        throw new OMCLParserError(mLocation, $"({mLocation}) {message}");
+    }
+
+    private enum ParseNumberState {
+        Start,
+        End,
+        IntDigit,
+        IntDigitUnderscore,
+        Period,
+        FloatDigit,
+        Exponent,
+        FloatDigitUnderscore,
+        ExponentDigit,
+        ExponentMinus,
+        ExponentPlus,
+    }
+
+    private bool IsTagCharacter(char c) {
+        return IsAlpha(c) || IsDigit(c) || c == '_' || c == '-';
+    }
+
     private bool IsDigit(char c)
     {
         return c >= '0' && c <= '9';
+    }
+
+    private Func<char, bool> CreateIsDigit(int b)
+    {
+        return c =>  (c >= '0' && c <= ('0' + Math.Min(b, 10) - 1)) ||
+                (c >= 'a' && c <= ('a' + b - 11)) ||
+                (c >= 'A' && c <= ('A' + b - 11));
     }
 
     private bool IsIdentBegin(char c)

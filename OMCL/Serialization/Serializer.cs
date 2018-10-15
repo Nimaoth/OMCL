@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Text;
 using OMCL.Data;
@@ -38,7 +39,7 @@ public class Serializer {
 
     public static Serializer ToStringBuilder(StringBuilder sb) {
         return new Serializer {
-            _writer = new StringWriter(sb)
+            _writer = new StringWriter(sb, CultureInfo.InvariantCulture)
         };
     }
 
@@ -112,18 +113,21 @@ public class Serializer {
     }
 
     public void Write(long l) {
-        // _writer.Write("!f ");
         _writer.WriteLine(l);
     }
 
     public void Write(double d) {
-        // _writer.Write("!f ");
-        _writer.WriteLine(d);
+        var str = d.ToString(CultureInfo.InvariantCulture);
+        if (!str.Contains("."))
+            str += ".0";
+        _writer.WriteLine(str);
     }
 
     public void Write(bool b) {
-        // _writer.Write("!b ");
-        _writer.WriteLine(b);
+        if (b)
+            _writer.WriteLine("true");
+        else
+            _writer.WriteLine("false");
     }
 
     private void WriteValue(OMCLItem item) {

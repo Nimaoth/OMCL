@@ -1,0 +1,26 @@
+bool1 = true
+bool2 = false
+
+none1 = none
+
+string1 = "test"
+string2 = 'test'
+string3 = "test 'lol' test"
+string4 = 'test "lol" test'
+string5 = "string with '' and " '""'
+string6 = "string
+with
+newlines"
+string7 = 'another
+string
+with
+newlines'
+
+
+int1 = 1
+int2 = 123_456_789
+int3 = 0x123
+int4 = 0x123_456
+int5 = 0b1101_1001
+int6 = 0o123_456
+

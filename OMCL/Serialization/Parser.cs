@@ -89,6 +89,19 @@ public class Parser {
                 return result;
             }
 
+            case TokenType.Int: {
+                NextToken();
+                OMCLItem result = (long)next.value;
+                result.Tags = tags;
+                return result;
+            }
+
+            case TokenType.Float: {
+                NextToken();
+                OMCLItem result = (double)next.value;
+                result.Tags = tags;
+                return result;
+            }
         }
 
         throw new NotImplementedException(nameof(ParseItem));
