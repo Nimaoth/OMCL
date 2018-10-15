@@ -24,3 +24,9 @@ int4 = 0x123_456
 int5 = 0b1101_1001
 int6 = 0o123_456
 
+float1 = 1.0
+float2 = 123.456
+float3 = 1_2_3.4_5_6
+float4 = 1.0e1
+float5 = 1.0e+1
+float6 = 1.0e-1
