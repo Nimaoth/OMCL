@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 using OMCL.Data;
@@ -39,123 +40,6 @@ public class Parser {
         throw new OMCLParserError(NextLocation, $"({NextLocation}) {message}");
     }
 
-    private List<string> ParseTags() {
-        var tags = new List<string>();
-        
-        var next = PeekToken();
-        while (next.Type == TokenType.Tag) {
-            tags.Add(next.value as string);
-            NextToken();
-            SkipNewlines();
-            next = PeekToken();
-        }
-
-        return tags;
-    }
-
-    public OMCLItem ParseObject() {
-        var tags = ParseTags();
-        return DoParseObject(tags);
-    }
-
-    private OMCLItem DoParseObject(List<string> tags) {
-        OMCLObject resultObject = new OMCLObject();
-
-        SkipNewlines();
-        if (!Expect(TokenType.OpenBrace)) ReportError("Failed to parse object. Expected '{'");
-
-        if (CheckToken(TokenType.ClosingBrace)) {
-            NextToken();
-            if (!Expect(TokenType.Newline, TokenType.EOF)) ReportError("Failed to parse object. Expected '\\n'");
-            return resultObject;
-        }
-
-        if (!Expect(TokenType.Newline)) ReportError("Failed to parse object. Expected '\\n'");
-
-        SkipNewlines();
-        while (true) {
-            string key = null;
-
-            var next = PeekToken(KeyName: true);
-
-            if (next.Type == TokenType.EOF) {
-                ReportError("Unexpected end of file in object");
-            }
-
-            if (next.Type == TokenType.ClosingBrace) {
-                break;
-            }
-
-            if (next.Type != TokenType.String) {
-                ReportError("Failed to parse property. Expected property name");
-                return null;
-            }
-
-            key = next.value as string;
-
-            NextToken(KeyName: true);
-            SkipNewlines();
-
-            next = PeekToken();
-            if (!(next.Type == TokenType.OpenBrace || next.Type == TokenType.OpenBracket)) {
-                if (!Expect(TokenType.Equals)) ReportError("Failed to parse property. Expected '='");
-                SkipNewlines();
-            }
-
-            var item = ParseItem();
-            resultObject.Add(key, item);
-        }
-
-        if (!Expect(TokenType.ClosingBrace)) ReportError("Failed to parse object. Expected '}}'");
-        if (!Expect(TokenType.Newline, TokenType.EOF)) ReportError("Failed to parse object. Expected '\\n'");
-
-        OMCLItem result = resultObject;
-        result.Tags = tags;
-        return result;
-    }
-
-    public OMCLItem ParseArray() {
-        var tags = ParseTags();
-        return DoParseArray(tags);
-    }
-
-    private OMCLItem DoParseArray(List<string> tags) {
-        OMCLArray resultArray = new OMCLArray();
-
-        if (!Expect(TokenType.OpenBracket)) ReportError("Failed to parse array. Expected '['");
-
-        if (CheckToken(TokenType.ClosingBracket)) {
-            NextToken();
-            if (!Expect(TokenType.Newline, TokenType.EOF)) ReportError("Failed to parse array. Expected '\\n'");
-            return resultArray;
-        }
-
-        if (!Expect(TokenType.Newline)) ReportError("Failed to parse array. Expected '\\n'");
-
-        SkipNewlines();
-        while (true) {
-            var next = PeekToken(KeyName: true);
-
-            if (next.Type == TokenType.EOF) {
-                ReportError("Unexpected end of file in array");
-            }
-
-            if (next.Type == TokenType.ClosingBracket) {
-                break;
-            }
-
-            var item = ParseItem();
-            resultArray.Add(item);
-        }
-
-        if (!Expect(TokenType.ClosingBracket)) ReportError("Failed to parse array. Expected ']'");
-        if (!Expect(TokenType.Newline, TokenType.EOF)) ReportError("Failed to parse array. Expected '\\n'");
-
-        OMCLItem result = resultArray;
-        result.Tags = tags;
-        return result;
-    }
-
     public OMCLItem ParseItem() {
         var tags = ParseTags();
 
@@ -185,8 +69,6 @@ public class Parser {
                         break;
                 }
 
-                if (!Expect(TokenType.Newline)) ReportError("Failed to parse string. Expected '\\n'");
-
                 OMCLItem result = sb.ToString();
                 result.Tags = tags;
                 return result;
@@ -197,8 +79,147 @@ public class Parser {
         throw new NotImplementedException(nameof(ParseItem));
     }
 
-    private void SkipNewlines()
+    private List<string> ParseTags() {
+        var tags = new List<string>();
+        
+        var next = PeekToken();
+        while (next.Type == TokenType.Tag) {
+            tags.Add(next.value as string);
+            NextToken();
+            SkipNewlines();
+            next = PeekToken();
+        }
+
+        return tags;
+    }
+
+    public OMCLObject ParseObject() {
+        return DoParseObject(TokenType.EOF);
+    }
+ 
+    private OMCLItem DoParseObject(List<string> tags) {
+        SkipNewlines();
+        if (!Expect(TokenType.OpenBrace)) ReportError("Failed to parse object. Expected '{'");
+
+        if (CheckToken(TokenType.ClosingBrace)) {
+            NextToken();
+            return new OMCLObject();
+        }
+
+        var resultObject = DoParseObject(TokenType.ClosingBrace);
+
+        if (!Expect(TokenType.ClosingBrace)) ReportError("Failed to parse object. Expected '}}'");
+
+        OMCLItem result = resultObject;
+        result.Tags = tags;
+        return result;
+    }
+
+    private OMCLObject DoParseObject(params TokenType[] delimiters) {
+        OMCLObject resultObject = new OMCLObject();
+        SkipNewlines();
+
+        var next = PeekToken(KeyName: true);
+        if (delimiters.Any(d => (d == next.Type)))
+            return resultObject;
+
+        while (true) {
+            string key = null;
+
+            if (next.Type != TokenType.String) {
+                ReportError("Failed to parse property. Expected property name");
+                return null;
+            }
+
+            key = next.value as string;
+
+            NextToken(KeyName: true);
+            SkipNewlines();
+
+            next = PeekToken();
+            if (!(next.Type == TokenType.OpenBrace || next.Type == TokenType.OpenBracket)) {
+                if (!Expect(TokenType.Equals)) ReportError("Failed to parse property. Expected '='");
+                SkipNewlines();
+            }
+
+            var item = ParseItem();
+            resultObject.Add(key, item);
+
+            bool nl = SkipNewlines();
+            next = PeekToken(KeyName: true);
+            if (delimiters.Any(d => (d == next.Type))) {
+                break;
+            }
+            else if (next.Type == TokenType.Comma) {
+                NextToken();
+                SkipNewlines();
+                next = PeekToken(KeyName: true);
+                if (delimiters.Any(d => (d == next.Type)))
+                    break;
+            }
+            else if (!nl) {
+                ReportError("Failed to parse object. Expected '\\n' or ',' after property");
+            }
+        }
+
+        return resultObject;
+    }
+
+    public OMCLItem ParseArray() {
+        var tags = ParseTags();
+        return DoParseArray(tags);
+    }
+
+    private OMCLItem DoParseArray(List<string> tags) {
+        OMCLArray resultArray = new OMCLArray();
+
+        if (!Expect(TokenType.OpenBracket)) ReportError("Failed to parse array. Expected '['");
+
+        SkipNewlines();
+
+        var next = PeekToken();
+        while (true) {
+            if (next.Type == TokenType.EOF) {
+                ReportError("Unexpected end of file in array");
+                return null;
+            }
+
+            if (next.Type == TokenType.ClosingBracket) {
+                break;
+            }
+
+            var item = ParseItem();
+            resultArray.Add(item);
+
+            bool nl = SkipNewlines();
+            next = PeekToken();
+            if (next.Type == TokenType.ClosingBracket) {
+                break;
+            }
+            else if (next.Type == TokenType.Comma) {
+                NextToken();
+                SkipNewlines();
+                next = PeekToken();
+            }
+            else if (!nl) {
+                ReportError("Failed to parse array. Expected '\\n' or ',' after value in array");
+                return null;
+            }
+        }
+
+        if (!Expect(TokenType.ClosingBracket)) {
+            ReportError("Failed to parse array. Expected ']'");
+            return null;
+        }
+
+        OMCLItem result = resultArray;
+        result.Tags = tags;
+        return result;
+    }
+
+    private bool SkipNewlines()
     {
+        bool skippedNewlines = false;
         while (true)
         {
             var tok = mLexer.PeekToken();
@@ -208,12 +229,15 @@ public class Parser {
 
             if (tok.Type == TokenType.Newline)
             {
+                skippedNewlines = true;
                 NextToken();
                 continue;
             }
 
             break;
         }
+
+        return skippedNewlines;
     }
 
     /// <summary>
