@@ -108,7 +108,7 @@ They can contain all valid unicode codepoints except for the quotation character
 
 String literals can be concatenated.
 
-```javascript
+```
 // A simple string literal
 "This is a string literal"
 'This is a string literal'
@@ -137,7 +137,7 @@ false
 Integers are 64 bit signed numbers.
 They can contain underscores to make them more readable.
 Underscores can not appear at the beginning or end of the number literal. Hexadecimal numbers begin with `0x`, binary numbers with `0b` and octal numbers with `0o`
-```javascript
+```
 123
 5_000_000
 0xff        // decimal: 255
@@ -148,7 +148,7 @@ Underscores can not appear at the beginning or end of the number literal. Hexade
 ### Floats
 Floats are 64 bit double presicion floating point numbers.
 The rules for underscores are similiar to integers.
-```javascript
+```
 1.0
 5_000_000.356_125
 9.0e19
