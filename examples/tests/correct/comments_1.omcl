@@ -1,0 +1,21 @@
+// line comment
+/*
+    block comment
+    /*
+        nested block comment
+    */
+*/
+
+{
+    // line comment inside of object
+    /*
+        block comment inside of object
+        /*
+            nested block comment inside of object
+        */
+    */
+    property = "test" // line comment after property
+    property2 /* block comment in the middle */ = /* block comment in the middle */ "test"
+
+    property3 /* block comment in the middle */ {}
+}
