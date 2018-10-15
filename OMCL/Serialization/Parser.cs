@@ -46,6 +46,7 @@ public class Parser {
         while (next.Type == TokenType.Tag) {
             tags.Add(next.value as string);
             NextToken();
+            SkipNewlines();
             next = PeekToken();
         }
 
@@ -65,7 +66,7 @@ public class Parser {
 
         if (CheckToken(TokenType.ClosingBrace)) {
             NextToken();
-            if (!Expect(TokenType.Newline)) ReportError("Failed to parse object. Expected '\\n'");
+            if (!Expect(TokenType.Newline, TokenType.EOF)) ReportError("Failed to parse object. Expected '\\n'");
             return resultObject;
         }
 
@@ -125,7 +126,7 @@ public class Parser {
 
         if (CheckToken(TokenType.ClosingBracket)) {
             NextToken();
-            if (!Expect(TokenType.Newline)) ReportError("Failed to parse array. Expected '\\n'");
+            if (!Expect(TokenType.Newline, TokenType.EOF)) ReportError("Failed to parse array. Expected '\\n'");
             return resultArray;
         }
 
@@ -148,7 +149,7 @@ public class Parser {
         }
 
         if (!Expect(TokenType.ClosingBracket)) ReportError("Failed to parse array. Expected ']'");
-        if (!Expect(TokenType.Newline)) ReportError("Failed to parse array. Expected '\\n'");
+        if (!Expect(TokenType.Newline, TokenType.EOF)) ReportError("Failed to parse array. Expected '\\n'");
 
         OMCLItem result = resultArray;
         result.Tags = tags;
@@ -157,6 +158,8 @@ public class Parser {
 
     public OMCLItem ParseItem() {
         var tags = ParseTags();
+
+        SkipNewlines();
 
         var next = PeekToken();
         switch (next.Type) {

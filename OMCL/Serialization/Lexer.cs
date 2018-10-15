@@ -39,7 +39,9 @@ public class Span {
     public int EndIndex;
     public int LineStartIndex;
 
-    public override string ToString() => $"{this.Line}:{this.StartIndex - this.LineStartIndex + 1}";
+    public int Column => StartIndex - LineStartIndex + 1;
+
+    public override string ToString() => $"{this.Line}:{this.Column}";
 
     public Span Clone() => new Span {
         Line = this.Line,
