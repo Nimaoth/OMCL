@@ -8,7 +8,9 @@
     <Company></Company>
     <Title>A simple configuration language</Title>
     <Description>Provides functionality for serializing and deserializing .omcl configuration files into C# objects</Description>
-    
+    <PackageProjectUrl>https://github.com/Nimaoth/OMCL</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Nimaoth/OMCL</RepositoryUrl>
+    <PackageTags>config;configuration;omcl</PackageTags>
   </PropertyGroup>
 
 </Project>
