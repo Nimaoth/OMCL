@@ -74,6 +74,21 @@ public class Parser {
                 return result;
             }
 
+            case TokenType.KwFalse: goto case TokenType.KwTrue;
+            case TokenType.KwTrue: {
+                NextToken();
+                OMCLItem result = next.Type == TokenType.KwTrue;
+                result.Tags = tags;
+                return result;
+            }
+
+            case TokenType.KwNone: {
+                NextToken();
+                OMCLItem result = new OMCLNone();
+                result.Tags = tags;
+                return result;
+            }
+
         }
 
         throw new NotImplementedException(nameof(ParseItem));
@@ -119,21 +134,21 @@ public class Parser {
         OMCLObject resultObject = new OMCLObject();
         SkipNewlines();
 
-        var next = PeekToken(KeyName: true);
+        var next = PeekToken();
         if (delimiters.Any(d => (d == next.Type)))
             return resultObject;
 
         while (true) {
             string key = null;
 
-            if (next.Type != TokenType.String) {
-                ReportError("Failed to parse property. Expected property name");
+            if (next.Type != TokenType.String && next.Type != TokenType.Identifier) {
+                ReportError("Failed to parse property. Expected property name (string or identifier)");
                 return null;
             }
 
             key = next.value as string;
 
-            NextToken(KeyName: true);
+            NextToken();
             SkipNewlines();
 
             next = PeekToken();
@@ -146,14 +161,14 @@ public class Parser {
             resultObject.Add(key, item);
 
             bool nl = SkipNewlines();
-            next = PeekToken(KeyName: true);
+            next = PeekToken();
             if (delimiters.Any(d => (d == next.Type))) {
                 break;
             }
             else if (next.Type == TokenType.Comma) {
                 NextToken();
                 SkipNewlines();
-                next = PeekToken(KeyName: true);
+                next = PeekToken();
                 if (delimiters.Any(d => (d == next.Type)))
                     break;
             }
@@ -243,9 +258,9 @@ public class Parser {
     /// <summary>
     /// Read the next token from the lexer
     /// </summary>
-    private Token NextToken(bool KeyName = false)
+    private Token NextToken()
     {
-        mCurrentToken = mLexer.NextToken(KeyName);
+        mCurrentToken = mLexer.NextToken();
         if (mCurrentToken.Type != TokenType.Newline)
             lastNonWhitespace = mCurrentToken;
         return mCurrentToken;
@@ -278,9 +293,9 @@ public class Parser {
         return next.Type == type;
     }
 
-    private Token PeekToken(bool KeyName = false)
+    private Token PeekToken()
     {
-        return mLexer.PeekToken(KeyName);
+        return mLexer.PeekToken();
     }
 }
 

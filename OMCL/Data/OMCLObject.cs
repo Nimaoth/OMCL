@@ -12,7 +12,8 @@ public class OMCLItem {
         String,
         Int,
         Float,
-        Bool
+        Bool,
+        None
     }
 
     public OMCLItemType Type { get; private set; }
@@ -69,6 +70,12 @@ public class OMCLItem {
         throw new System.Exception($"Value of type {Type} can't be casted to bool");
     }
 
+    public OMCLNone AsNone() {
+        if (Type == OMCLItemType.None)
+            return (OMCLNone)_value;
+        throw new System.Exception($"Value of type {Type} can't be casted to OMCLNone");
+    }
+
     public static implicit operator OMCLItem(string value) => new OMCLItem { Type = OMCLItemType.String, _value = value };
     public static implicit operator OMCLItem(char value) => new OMCLItem { Type = OMCLItemType.String, _value = new string(value, 1) };
     public static implicit operator OMCLItem(int value) => new OMCLItem { Type = OMCLItemType.Int, _value = (long)value };
@@ -78,6 +85,7 @@ public class OMCLItem {
     public static implicit operator OMCLItem(bool value) => new OMCLItem { Type = OMCLItemType.Bool, _value = value };
     public static implicit operator OMCLItem(OMCLObject value) => new OMCLItem { Type = OMCLItemType.Object, _value = value };
     public static implicit operator OMCLItem(OMCLArray value) => new OMCLItem { Type = OMCLItemType.Array, _value = value };
+    public static implicit operator OMCLItem(OMCLNone value) => new OMCLItem { Type = OMCLItemType.None, _value = value };
 
     public override bool Equals(object obj)
     {
@@ -101,6 +109,9 @@ public class OMCLItem {
     {
         return _value?.GetHashCode() ?? 0;
     }
+}
+
+public class OMCLNone {
 }
 
 public class OMCLObject : IEnumerable<(string key, OMCLItem value)> {

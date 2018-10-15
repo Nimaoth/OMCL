@@ -30,7 +30,9 @@ internal enum TokenType {
     KwFalse,
     KwNone,
 
-    Tag
+    Tag,
+
+    Identifier
 }
 
 public class Span {
@@ -107,19 +109,19 @@ internal class Lexer {
         };
     }
 
-    public Token PeekToken(bool KeyName = false)
+    public Token PeekToken()
     {
         var oldLocation = mLocation.Clone();
 
         try {
-            return NextToken(KeyName);
+            return NextToken();
         }
         finally {
             mLocation = oldLocation;
         }
     }
 
-    public Token NextToken(bool KeyName = false)
+    public Token NextToken()
     {
         if (SkipWhitespaceAndComments(out Span loc))
         {
@@ -130,10 +132,10 @@ internal class Lexer {
             return tok;
         }
 
-        return ReadToken(KeyName);
+        return ReadToken();
     }
 
-    private Token ReadToken(bool KeyName = false)
+    private Token ReadToken()
     {
         var token = new Token();
         token.Location = mLocation.Clone();
@@ -162,9 +164,11 @@ internal class Lexer {
                 ParseStringLiteral(ref token, '\'');
                 break;
 
-            case char c when KeyName && IsIdentBegin(c):
-                ParseStringLiteral(ref token);
+            case char c when IsIdentBegin(c): {
+                ParseIdentifier(ref token);
+                CheckKeywords(ref token);
                 break;
+            }
 
             // case '"': ParseStringLiteral(ref token, '"'); break;
 
@@ -180,6 +184,14 @@ internal class Lexer {
 
         token.Location.EndIndex = mLocation.StartIndex;
         return token;
+    }
+
+    private void CheckKeywords(ref Token token) {
+        switch (token.value as string) {
+            case "true": token.Type = TokenType.KwTrue; break;
+            case "false": token.Type = TokenType.KwFalse; break;
+            case "none": token.Type = TokenType.KwNone; break;
+        }
     }
 
     private void ParseTag(ref Token token) {
@@ -231,26 +243,21 @@ internal class Lexer {
         token.value = sb.ToString();
     }
 
-    private void ParseStringLiteral(ref Token token) {
-        token.Type = TokenType.String;
+    private void ParseIdentifier(ref Token token) {
+        token.Type = TokenType.Identifier;
         var sb = new StringBuilder();
 
-        bool foundEnd = false;
         while (mLocation.StartIndex < mText.Length) {
             char c = Current;
-            mLocation.StartIndex++;
 
             if (!IsIdent(c)) {
-                foundEnd = true;
                 break;
             }
 
             sb.Append(c);
+            mLocation.StartIndex++;
         }
 
-        if (!foundEnd)
-            throw new OMCLParserError(mLocation, $"({mLocation}) Unexpected end of string literal");
-        
         token.value = sb.ToString();
     }
 
@@ -277,7 +284,7 @@ internal class Lexer {
 
     private bool IsIdent(char c)
     {
-        return IsIdentBegin(c) || (c >= '0' && c <= '9') || c == '-';
+        return IsIdentBegin(c) || IsDigit(c) || c == '-';
     }
 
     private bool SkipWhitespaceAndComments(out Span loc)
