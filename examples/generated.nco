@@ -1,0 +1,62 @@
+﻿// uiaeuiae
+
+/*
+    this is a test
+*/
+
+{
+    a1 {
+
+    }
+
+    "a2" {
+
+    }
+
+    a.3 {
+
+    }
+
+    a_4 {
+
+    }
+    
+    b1 = {
+
+    }
+
+    "b2" = {
+
+    }
+
+    b.3 = {
+
+    }
+
+    b_4 = {
+        
+    }
+
+    c1 = "test"
+
+    // this won't work
+    //c2 "test"
+
+    d1 = []
+
+    d2 = [
+        "test"
+    ]
+
+    d3 = [
+        [
+            "test1"
+            "test2" 'lol'
+        ]
+        {
+            a = "b"
+            c = "d"
+        }
+        "uiaeuiadeu"
+    ]
+}

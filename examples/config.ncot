@@ -1,0 +1,37 @@
+:: CacheType {
+    Pattern: string
+    Age: string
+}
+
+:: Sport {
+    Sportradar: {
+        Key: string
+        Api: string
+    }
+
+    Tournaments: [string]
+
+    Cache: CacheType
+
+    TeamMappings: {
+        *: string
+    }
+
+    Sportevents: {
+        UpdateFrom: string
+        UpdateUntil: string
+    }
+
+    LiveUpdates: [
+        *
+    ]
+
+    RegularUpdates: [
+        {
+            Update:    string
+            Interval?: string
+            Delay?:    string
+            Cron?:     string
+        }
+    ]
+}

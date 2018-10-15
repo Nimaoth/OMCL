@@ -1,0 +1,55 @@
+Soccer {
+    Sportradar {
+        Key = hyt33tha9hzfx83hvu2df4qe
+        Api = soccer-p3/global
+    }
+
+    Tournaments [
+        sr:tournament:491
+        sr:tournament:232
+    ]
+
+    Cache {
+        Pattern = *
+        Age     = 10:00:00
+    }
+
+    TeamMappings {
+        "FC Rot-Weiß Erfurt"            = "Rot-Weiß Erfurt"
+        "F.C. Hansa Rostock"            = "FC Hansa Rostock"
+        "SC Fortuna Köln"               = "Fortuna Köln"
+        "VfR 1921 Aalen"                = "VfR Aalen"
+        "VfL 1899 Osnabruck"            = "VfL Osnabrück"
+        "SC Fortuna Köln"               = "Fortuna Köln"
+        "SC Preußen 06 Münster"         = "SC Preußen Münster"
+        "Krefelder FC Uerdingen 05"     = "KFC Uerdingen"
+        "VfL Sportfreunde Lotte 1929"   = "Sportfreunde Lotte"
+        "SV Meppen 1912"                = "SV Meppen"
+    }
+
+    Sportevents {
+        # update sportevents from the last two days or later
+        UpdateFrom  = 02:00:00:00
+
+        # update sportevents for the next 14 days
+        UpdateUntil = 14:00:00:00
+    }
+
+    LiveUpdates {
+
+    }
+
+    RegularUpdates [
+        {
+            Update   = Sportevent
+            Interval = 12:00:00
+            Delay    = 06:00:00
+            Cron     = 0 25/60 * ? * * *
+        }
+        {
+            Update   = Player
+            Interval = 999:00:00
+            Delay    =  00:00:00
+        }
+    ]
+}
