@@ -177,10 +177,6 @@ Tags have the form `!tag_name`, where tag_name can contain `a-z`, `A-Z`, `0-9`, 
 
 ## Examples
 ```javascript
-// game object
-// use a tag to specify that this object should be serialized into a game object (just a example)
-!game_object
-
 // properties
 id = "Enemy1"
 active = true
@@ -224,7 +220,7 @@ components [
 ]
 ```
 
-## C# API
+## C# API examples
 
 Parsing a .omcl file into C#-Objects can be done via `OMCL.Serialization.Parser`.
 Parsing into a custom class structure will be implemented in future versions.
