@@ -130,6 +130,10 @@ public class Serializer {
             _writer.WriteLine("false");
     }
 
+    public void Write(OMCLNone none) {
+        _writer.WriteLine("none");
+    }
+
     private void WriteValue(OMCLItem item) {
         var prev = _indentationLevel++;
         try {
@@ -158,6 +162,9 @@ public class Serializer {
                 break;
             case OMCLItem.OMCLItemType.Float:
                 Write(item.AsFloat());
+                break;
+            case OMCLItem.OMCLItemType.None:
+                Write(item.AsNone());
                 break;
             }
         }

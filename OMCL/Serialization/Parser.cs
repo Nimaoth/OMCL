@@ -36,6 +36,12 @@ public class Parser {
         };
     }
 
+    public static Parser FromString(string str) {
+        return new Parser {
+            mLexer = Lexer.FromString(str)
+        };
+    }
+
     private void ReportError(string message) {
         throw new OMCLParserError(NextLocation, $"({NextLocation}) {message}");
     }
