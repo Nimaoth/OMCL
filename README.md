@@ -1,4 +1,7 @@
 # OMCL
+
+Latest Version: 0.0.5
+
 OMCL is a simple configuration language.
 It supports comments, maps, arrays, strings, integers, floats, booleans and a special value, 'none', indication that no value is present.
 
