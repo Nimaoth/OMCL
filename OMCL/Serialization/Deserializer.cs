@@ -48,11 +48,12 @@ public interface IArrayConverter {
     public T Deserialize<T>(Parser parser)
         where T : class, new() {
         var obj = parser.ParseObject();
+        return (T)ConvertObject(typeof(T), new List<string>(), obj);
+    }
 
-        var result = new T();
-        FillFields(result, obj);
-
-        return result;
+    public object Deserialize(Type type, Parser parser) {
+        var obj = parser.ParseObject();
+        return ConvertObject(type, new List<string>(), obj);
     }
 
     private void FillFields<T>(T result, OMCLObject obj) {
@@ -72,6 +73,19 @@ public interface IArrayConverter {
             var value = obj[name];
 
             SetField(field, result, value);
+
+            obj.RemoveProperty(name);
+        }
+
+        foreach (var prop in props) {
+            var name = prop.Name;
+
+            if (!obj.HasProperty(name))
+                continue;
+                
+            var value = obj[name];
+
+            SetField(prop, result, value);
 
             obj.RemoveProperty(name);
         }
@@ -131,7 +145,7 @@ public interface IArrayConverter {
         }
     }
 
-    public object ConvertNone(Type type, List<string> tags) {
+    private object ConvertNone(Type type, List<string> tags) {
         // check if the type is nullable
         if (type.IsClass)
             return null;
@@ -143,7 +157,7 @@ public interface IArrayConverter {
         throw new Exception($"Failed to deserialize none into type '{type.FullName}'. The type is not nullable.");
     }
 
-    public object ConvertString(Type type, List<string> tags, string str) {
+    private object ConvertString(Type type, List<string> tags, string str) {
         // check for custom converters
         if (_stringConverters.ContainsKey(type)) {
             var conv = _stringConverters[type];
@@ -180,7 +194,7 @@ public interface IArrayConverter {
         }
     }
 
-    public object ConvertObject(Type type, List<string> tags, OMCLObject obj) {
+    private object ConvertObject(Type type, List<string> tags, OMCLObject obj) {
         // check for custom converters
         if (_objectConverters.ContainsKey(type)) {
             var conv = _objectConverters[type];
@@ -217,7 +231,7 @@ public interface IArrayConverter {
         return result;
     }
 
-    public object ConvertArray(Type type, List<string> tags, OMCLArray array) {
+    private object ConvertArray(Type type, List<string> tags, OMCLArray array) {
         // handle custom converters
         if (_arrayConverters.ContainsKey(type)) {
             var conv = _arrayConverters[type];

@@ -269,3 +269,120 @@ class Program
     }
 }
 ```
+
+Serialization into a custom class structure:
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Numerics;
+using System.Text;
+using OMCL.Data;
+using OMCL.Serialization;
+
+class Program
+{
+    // data structure
+    class Person {
+        public string Name { get; set; }
+        public string LastName { get; set; }
+        public Gender Gender { get; set; }
+        public DateTime DateOfBirth;
+        public float Height { get; set; }
+        public string[] NickNames;
+        public List<Person> Children;
+        public BigInteger HairCount;
+        public List<Hobby> Hobbies;
+    }
+
+    enum Gender {
+        m, w
+    }
+
+    class Hobby {
+        public string Name { get; set; }
+    }
+
+    class Soccer : Hobby {
+        public string Position { get; set; }
+    }
+
+    class Tennis : Hobby {
+        public bool Good { get; set; }
+    }
+
+    // converters
+    class DateTimeConverter : IStringConverter {
+        public object ConvertString(List<string> tags, string str) {
+            return DateTime.ParseExact(str, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+        }
+    }
+
+    class BigIntegerConverter : IStringConverter {
+        public object ConvertString(List<string> tags, string str) {
+            return BigInteger.Parse(str);
+        }
+    }
+
+    class HobbyConverter : IObjectConverter {
+        public bool CanConvert(List<string> tags, OMCLObject obj) {
+            return tags.Count == 1;
+        }
+
+        public object CreateInstance(List<string> tags) {
+            var hobby = tags[0];
+            switch (hobby) {
+            case "Soccer": return new Soccer();
+            case "Tennis": return new Tennis();
+            default: return new Hobby();
+            }
+        }
+    }
+
+    // main
+    static void Main(string[] args)
+    {
+        var parser = Parser.FromString(@"
+            Name = 'Jon'
+            LastName = 'Doe'
+            Gender = 'm'
+            Height = 1.82
+            DateOfBirth = '1983/01/16'
+            NickNames [ 'The One', 'And Only' ]
+            Children [
+                {
+                    Name = 'Max'
+                    LastName = 'Doe'
+                    Gender = 'm'
+                    // ...
+                }
+                {
+                    Name = 'Gina'
+                    LastName = 'Doe'
+                    Gender = 'w'
+                    // ...
+                }
+            ]
+            HairCount = '12345678987654321234567898765432123456789'
+            Hobbies [
+                !Soccer {
+                    Name = 'Soccer'
+                    Position = 'Defense'
+                }
+                !Tennis {
+                    Name = 'Tennis'
+                    Good = false
+                }
+            ]
+        ");
+
+        Deserializer deserializer = new Deserializer();
+        deserializer.AddStringConverter<DateTime>(new DateTimeConverter());
+        deserializer.AddStringConverter<BigInteger>(new BigIntegerConverter());
+        deserializer.AddObjectConverter<Hobby>(new HobbyConverter());
+
+        var person = deserializer.Deserialize<Person>(parser);
+        // ...
+    }
+}
+```
