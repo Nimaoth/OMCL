@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading;
 using OMCL.Data;
 using OMCL.Serialization;
 
@@ -10,19 +14,11 @@ namespace Test
     {
         static void Main(string[] args)
         {
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+
             RunTests();
             try {
-                var file = args.Length > 0 ? args[0] : @"D:\Programming\C#\OMCL\examples\generated.omcl";
-
-                var parser = Parser.FromFile(file);
-                var config = parser.ParseObject();
-
                 
-                var sb = new StringBuilder();
-                var s = Serializer.ToStringBuilder(sb);
-                s.Serialize(config);
-
-                System.Console.WriteLine(sb);
             }
             catch (Exception e) {
                 System.Console.Error.WriteLine($"Failed to process file: {e.Message}\n{e}");
