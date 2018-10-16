@@ -16,15 +16,20 @@ public interface IArrayConverter {
     void AddValue(object collection, object value);
 }
 
-    public interface IStringConverter
-    {
+    public interface IStringConverter {
         object ConvertString(List<string> tags, string str);
+    }
+
+    public interface IObjectConverter {
+        bool CanConvert(List<string> tags, OMCLObject obj);
+        object CreateInstance(List<string> tags);
     }
 
     public class Deserializer {
 
     private Dictionary<Type, IArrayConverter> _arrayConverters = new Dictionary<Type, IArrayConverter>();
     private Dictionary<Type, IStringConverter> _stringConverters = new Dictionary<Type, IStringConverter>();
+    private Dictionary<Type, IObjectConverter> _objectConverters = new Dictionary<Type, IObjectConverter>();
 
     public Deserializer() {}
     
@@ -34,6 +39,10 @@ public interface IArrayConverter {
 
     public void AddStringConverter<T>(IStringConverter conv) {
         _stringConverters[typeof(T)] = conv;
+    }
+
+    public void AddObjectConverter<T>(IObjectConverter conv) {
+        _objectConverters[typeof(T)] = conv;
     }
 
     public T Deserialize<T>(Parser parser)
@@ -63,6 +72,15 @@ public interface IArrayConverter {
             var value = obj[name];
 
             SetField(field, result, value);
+
+            obj.RemoveProperty(name);
+        }
+
+        if (!obj.Empty) {
+            var sb = new StringBuilder();
+            var ser = Serializer.ToStringBuilder(sb);
+            ser.Serialize(obj);
+            throw new Exception($"Failed to deserialize object into type '{tType.FullName}'. There are unknown properties:\n{sb}");
         }
     }
 
@@ -103,10 +121,10 @@ public interface IArrayConverter {
             return Convert.ChangeType(item.AsFloat(), targetType);
 
         case OMCLItem.OMCLItemType.Object:
-            return ConvertObject(targetType, item.AsObject());
+            return ConvertObject(targetType, tags, item.AsObject());
 
         case OMCLItem.OMCLItemType.Array:
-            return ConvertArray(targetType, item.AsArray());
+            return ConvertArray(targetType, tags, item.AsArray());
 
         default:
             throw new NotImplementedException();
@@ -162,7 +180,18 @@ public interface IArrayConverter {
         }
     }
 
-    public object ConvertObject(Type type, OMCLObject obj) {
+    public object ConvertObject(Type type, List<string> tags, OMCLObject obj) {
+        // check for custom converters
+        if (_objectConverters.ContainsKey(type)) {
+            var conv = _objectConverters[type];
+            if (conv.CanConvert(tags, obj)) {
+                var instance = conv.CreateInstance(tags);
+                var instanceType = instance.GetType();
+                FillFields(instanceType, instance, obj);
+                return instance;
+            }
+        }
+
         // check if its a dictionary
         var iDictionary = type.GetInterfaces().Where(t => {
             return t.Name.StartsWith(nameof(IDictionary) + "`") &&
@@ -188,7 +217,7 @@ public interface IArrayConverter {
         return result;
     }
 
-    public object ConvertArray(Type type, OMCLArray array) {
+    public object ConvertArray(Type type, List<string> tags, OMCLArray array) {
         // handle custom converters
         if (_arrayConverters.ContainsKey(type)) {
             var conv = _arrayConverters[type];
