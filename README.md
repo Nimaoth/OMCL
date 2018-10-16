@@ -223,3 +223,49 @@ components [
     }
 ]
 ```
+
+## C# API
+
+Parsing a .omcl file into C#-Objects can be done via `OMCL.Serialization.Parser`.
+Parsing into a custom class structure will be implemented in future versions.
+Serializing an object to a string or a file can be done with the `OMCL.Serialization.Serializer` class.
+
+```csharp
+using System;
+using System.Text;
+using OMCL.Data;
+using OMCL.Serialization;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // parse from file
+        Parser parser = Parser.FromFile("example.omcl");
+        OMCLObject obj = parser.ParseObject();
+
+        // parse from string (since version 0.0.4)
+        parser = Parser.FromString(@"
+            prop1 = 1
+            prop2 = true
+            prop3 {
+                test1 = []
+                test2 = {}
+                test3 = none
+            }
+        ");
+        obj = parser.ParseObject();
+
+        // serialize to string
+        var stringBuilder = new StringBuilder();
+        Serializer serializer = Serializer.ToStringBuilder(stringBuilder);
+        serializer.Serialize(obj);
+
+        Console.WriteLine(stringBuilder);
+
+        // serialize to file
+        serializer = Serializer.ToFile("filename.omcl");
+        serializer.Serialize(obj);
+    }
+}
+```
